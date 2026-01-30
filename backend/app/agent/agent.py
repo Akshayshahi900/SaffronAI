@@ -1,6 +1,6 @@
 import random
 
-from llm_client import call_llm
+from app.llm_client import call_llm
 
 
 PERSONAS = [

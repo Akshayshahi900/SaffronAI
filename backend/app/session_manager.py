@@ -1,6 +1,5 @@
 #implement session memory here
-from types import Session
-
+from app.models import Session
 SESSIONS = {}
 
 def get_session(session_id: str):

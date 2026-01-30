@@ -1,6 +1,6 @@
 import re
 import json
-from llm_client import call_llm
+from app.llm_client import call_llm
 
 class IntelligenceExtractor:
     def __init__(self):
