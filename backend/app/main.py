@@ -23,8 +23,8 @@ class RequestBody(BaseModel):
 
 @app.post("/api/message")
 def process(req: RequestBody, x_api_key: str = Header(...)):
-  if x_api_key != API_KEY:
-    raise HTTPException(status_code=403, detail="Invalid API key")
+    if x_api_key != API_KEY:
+      raise HTTPException(status_code=403, detail="Invalid API key")
 
     session = get_session(req.sessionId)
 
