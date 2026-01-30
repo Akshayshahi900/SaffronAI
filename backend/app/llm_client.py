@@ -1,6 +1,5 @@
 from groq import Groq
-import os
-import json
+import os, json, re
 
 client = Groq(api_key=os.getenv("GROQ_API_KEY"))
 
@@ -11,12 +10,17 @@ def call_llm(prompt, json_mode=False):
             {"role": "system", "content": "You are a helpful assistant"},
             {"role": "user", "content": prompt}
         ],
-        temperature=0.7
+        temperature=0.3
     )
 
-    text = completion.choices[0].message.content
+    text = completion.choices[0].message.content.strip()
 
-    if json_mode:
-        return json.loads(text)
+    if not json_mode:
+        return text
 
-    return text.strip()
+    # 🛡️ Extract JSON safely from messy LLM output
+    match = re.search(r'\{.*\}', text, re.S)
+    if not match:
+        raise ValueError("LLM did not return JSON")
+
+    return json.loads(match.group())
