@@ -1,12 +1,13 @@
+import os
 from fastapi import FastAPI, Header, HTTPException
 from pydantic import BaseModel
-from session_manager import get_session
-from agent.agent import agent_reply
-from intelligence.intelligence import IntelligenceExtractor
-from guvi_client import send_final_result
+from app.session_manager import get_session
+from app.agent.agent import agent_reply
+from app.intelligence.intelligence import IntelligenceExtractor
+from app.guvi_client import send_final_result
 
-API_KEY = "YOUR_SECRET_KEY"
-
+# API_KEY = os.environ['GROQ_API_KEY']
+API_KEY="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"
 app = FastAPI()
 extractor = IntelligenceExtractor()
 
