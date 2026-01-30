@@ -1,18 +1,16 @@
-import os
-import requests
-import json
+import os, requests, json
 
-OPENAI_KEY = os.getenv("OPENAI_KEY")
+GROQ_KEY = os.getenv("GROQ_API_KEY")
 
 def call_llm(prompt, json_mode=False):
-    response = requests.post(
-        "https://api.openai.com/v1/chat/completions",
+    r = requests.post(
+        "https://api.groq.com/openai/v1/chat/completions",
         headers={
-            "Authorization": f"Bearer {OPENAI_KEY}",
+            "Authorization": f"Bearer {GROQ_KEY}",
             "Content-Type": "application/json"
         },
         json={
-            "model": "gpt-4o-mini",
+            "model": "llama3-70b-8192",
             "messages": [
                 {"role": "system", "content": "You are a helpful assistant"},
                 {"role": "user", "content": prompt}
@@ -22,9 +20,7 @@ def call_llm(prompt, json_mode=False):
         timeout=20
     )
 
-    text = response.json()["choices"][0]["message"]["content"]
-
+    text = r.json()["choices"][0]["message"]["content"]
     if json_mode:
         return json.loads(text)
-
     return text.strip()

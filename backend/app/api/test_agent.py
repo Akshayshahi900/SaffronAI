@@ -1,6 +1,6 @@
 from types import Session
 from agent import agent_reply
-from intelligence import extract_intel
+from backend.app.intelligence.intelligence import extract_intel
 
 s = Session("test1")
 
