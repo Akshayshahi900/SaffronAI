@@ -6,8 +6,7 @@ from app.agent.agent import agent_reply
 from app.intelligence.intelligence import IntelligenceExtractor
 from app.guvi_client import send_final_result
 
-# API_KEY = os.environ['GROQ_API_KEY']
-API_KEY="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"
+API_KEY = os.getenv['GROQ_API_KEY']
 app = FastAPI()
 extractor = IntelligenceExtractor()
 
@@ -25,7 +24,7 @@ class RequestBody(BaseModel):
 @app.post("/api/message")
 def process(req: RequestBody, x_api_key: str = Header(...)):
     if x_api_key != API_KEY:
-        raise HTTPException(status_code=403, detail="Invalid API key")
+      raise HTTPException(status_code=403, detail="Invalid API key")
 
     session = get_session(req.sessionId)
 
