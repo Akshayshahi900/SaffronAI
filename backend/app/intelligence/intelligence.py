@@ -67,7 +67,7 @@ class IntelligenceExtractor:
 
         try:
             # Call the shared LLM client provided by Teammate B
-            llm_result = call_llm(prompt, json=True)
+            llm_result = call_llm(prompt, json_mode=True)
 
             # 4. Merge Results (Combine Regex + LLM and remove duplicates)
             session.intel = {
