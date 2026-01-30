@@ -27,7 +27,7 @@ class IntelligenceExtractor:
         Updates session.intel by analyzing history with Regex + LLM.
         Supports: English, Hindi, Tamil, Telugu, and Malayalam.
         """
-        
+
         # 1. Prepare conversation context
         # We analyze the entire history to find data leaked across multiple messages
         full_chat_context = "\n".join([f"{m['sender']}: {m['text']}" for m in session.history])
@@ -79,7 +79,13 @@ class IntelligenceExtractor:
                 "language": llm_result.get('detectedLanguage', 'Multilingual'),
                 "persona": llm_result.get('persona', 'Scammer')
             }
-            
+            if ( len(session.intel["upiIds"]) > 0 or
+                  len(session.intel["phishingLinks"]) > 0 or
+                  len(session.intel["phoneNumbers"]) > 0
+                  ):
+                      session.finished = True
+
+
             # Update agentNotes so Teammate B has context for the GUVI callback
             session.agentNotes = f"Language: {session.intel['language']} | Persona: {session.intel['persona']}"
 
