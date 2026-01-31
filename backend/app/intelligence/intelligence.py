@@ -7,19 +7,22 @@ class IntelligenceExtractor:
         # Regex patterns for high-accuracy extraction of standard Indian formats
         self.patterns = {
             "upiIds": r'[a-zA-Z0-9.\-_]{2,256}@[a-zA-Z]{2,64}',
-            "bankAccounts": r'\b\d{9,18}\b',
+            "bankAccounts": r'(?:account|a\/c|acc|bank)\D{0,10}(\d{10,16})',
             "phishingLinks": r'https?://(?:[-\w.]|(?:%[\da-fA-F]{2}))+[/\w\.-]*',
             "phoneNumbers": r'\b(?:\+91|91)?[6-9]\d{9}\b'
         }
 
     def _regex_step(self, text):
-        """Extracts standard patterns using regular expressions."""
-        extracted = {}
-        for key, pattern in self.patterns.items():
-            # Finds all unique matches
-            matches = list(set(re.findall(pattern, text, re.IGNORECASE)))
-            extracted[key] = matches
-        return extracted
+      extracted = {}
+      for key, pattern in self.patterns.items():
+        matches = re.findall(pattern, text, re.IGNORECASE)
+
+        # If regex has capture groups, flatten
+        if matches and isinstance(matches[0], tuple):
+            matches = [m[0] for m in matches]
+
+        extracted[key] = list(set(matches))
+      return extracted
 
     def extract_intel(self, session):
         """
@@ -79,6 +82,12 @@ class IntelligenceExtractor:
                 "language": llm_result.get('detectedLanguage', 'Multilingual'),
                 "persona": llm_result.get('persona', 'Scammer')
             }
+            session.intel["confidence"] = min(
+              0.95,0.4 + 0.15 * (
+              len(session.intel["upiIds"]) +
+              len(session.intel["phoneNumbers"]) +
+              len(session.intel["phishingLinks"])
+              ))
             if ( len(session.intel["upiIds"]) > 0 or
                   len(session.intel["phishingLinks"]) > 0 or
                   len(session.intel["phoneNumbers"]) > 0
