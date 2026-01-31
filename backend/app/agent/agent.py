@@ -10,18 +10,22 @@ PERSONAS = [
     "You are a job seeker who recently submitted bank details online."
 ]
 
-
 def agent_reply(session):
-    # Assign a persona once per session
-    if not hasattr(session, "persona"):
-        session.persona = random.choice(PERSONAS)
+    # Assign persona ONCE and store it in session.intel
+    if not session.intel["persona"]:
+        session.intel["persona"] = random.choice(PERSONAS)
+
+    persona = session.intel["persona"]
+
+    # Only last 6 messages to save tokens
+    recent_history = session.history[-6:]
 
     conversation = ""
-    for m in session.history:
+    for m in recent_history:
         conversation += f'{m["sender"]}: {m["text"]}\n'
 
     prompt = f"""
-{session.persona}
+{persona}
 
 You are a real Indian bank customer.
 You believe this message is genuinely from your bank.
@@ -49,16 +53,6 @@ Rules:
 - If bank is mentioned → ask if it is SBI, HDFC, ICICI etc
 - If a link is mentioned → ask if it is official
 
-
-YOUR TASK:
-1. Extract any UPI IDs, Bank Accounts, or Phone Numbers that are written in words or local scripts.
-2. Identify 'suspiciousKeywords' (e.g., urgency, threats, lottery, KYC).
-3. Identify the 'persona' the scammer is using.
-4. Identify the 'detectedLanguage'.
-5. Identify the 'scamType' (OTP Scam, KYC Scam, Bank Impersonation, Refund Scam, Loan Scam, Lottery Scam).
-
-
-
 Reply naturally as the USER.
 Only output the message.
 """
@@ -66,6 +60,6 @@ Only output the message.
     reply = call_llm(prompt)
 
     if any(word in reply.lower() for word in ["otp", "verify", "blocked", "payment"]):
-      session.agentNotes += "Scam pressure increasing. "
+        session.agentNotes += "Scam pressure increasing. "
 
     return reply.strip()
