@@ -57,7 +57,7 @@ class IntelligenceExtractor:
         4. Identify the 'detectedLanguage'.
 
         Return ONLY a JSON object:
-        {
+        {{
           "upiIds": [],
           "phoneNumbers": [],
           "phishingLinks": [],
@@ -66,7 +66,8 @@ class IntelligenceExtractor:
           "detectedLanguage": "string",
           "persona": "string",
           "scamType": "string"
-        }
+        }}
+
 
         """
 
