@@ -14,16 +14,22 @@ class Session:
         self.agentNotes = ""
 
         self.intel = {
-            "upiIds": [],
-            "phoneNumbers": [],
-            "phishingLinks": [],
-            "bankAccounts": [],
-            "suspiciousKeywords": [],
-            "language": "",
-            "persona": "",
-            "scamType": "",
-            "confidence": 0.0
+        "upiIds": [],
+        "phoneNumbers": [],
+        "phishingLinks": [],
+        "bankAccounts": [],
+        "suspiciousKeywords": [],
+        "language": "",
+        "persona": "",
+        "scamType": "",
+        "confidence": 0.0,
+
+        # 🔥 NEW
+        "attackFlow": [],
+        "riskScore": 0.0,
+        "potentialLossINR": ""
         }
+
 
     def add(self, sender, text):
         self.history.append({"sender": sender, "text": text})
