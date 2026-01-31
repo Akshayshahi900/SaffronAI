@@ -14,7 +14,12 @@ extractor = IntelligenceExtractor()
 @app.post("/api/message")
 async def process(request: Request, x_api_key: str = Header(...)):
 
-    if x_api_key != API_KEY:
+    API_KEY = os.environ.get("HONEYPOT_API_KEY")
+
+    if not API_KEY:
+        raise HTTPException(status_code=500, detail="API key not loaded")
+
+    if x_api_key.strip() != API_KEY.strip():
         raise HTTPException(status_code=403, detail="Invalid API key")
 
     body = await request.json()
