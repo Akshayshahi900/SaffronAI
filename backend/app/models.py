@@ -2,7 +2,7 @@ from typing import List, Dict
 
 class Message:
     def __init__(self, sender: str, text: str):
-        self.sender = sender   # "scammer" | "user"
+        self.sender = sender
         self.text = text
 
 class Session:
@@ -18,7 +18,11 @@ class Session:
             "phoneNumbers": [],
             "phishingLinks": [],
             "bankAccounts": [],
-            "suspiciousKeywords": []
+            "suspiciousKeywords": [],
+            "language": "",
+            "persona": "",
+            "scamType": "",
+            "confidence": 0.0
         }
 
     def add(self, sender, text):

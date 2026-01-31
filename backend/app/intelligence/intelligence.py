@@ -57,15 +57,17 @@ class IntelligenceExtractor:
         4. Identify the 'detectedLanguage'.
 
         Return ONLY a JSON object:
-        {{
+        {
           "upiIds": [],
           "phoneNumbers": [],
           "phishingLinks": [],
           "bankAccounts": [],
           "suspiciousKeywords": [],
           "detectedLanguage": "string",
-          "persona": "string"
-        }}
+          "persona": "string",
+          "scamType": "string"
+        }
+
         """
 
         try:
@@ -74,25 +76,31 @@ class IntelligenceExtractor:
 
             # 4. Merge Results (Combine Regex + LLM and remove duplicates)
             session.intel = {
-                "upiIds": list(set(regex_data['upiIds'] + llm_result.get('upiIds', []))),
-                "phoneNumbers": list(set(regex_data['phoneNumbers'] + llm_result.get('phoneNumbers', []))),
-                "phishingLinks": list(set(regex_data['phishingLinks'] + llm_result.get('phishingLinks', []))),
-                "bankAccounts": list(set(regex_data['bankAccounts'] + llm_result.get('bankAccounts', []))),
-                "suspiciousKeywords": list(set(llm_result.get('suspiciousKeywords', []))),
-                "language": llm_result.get('detectedLanguage', 'Multilingual'),
-                "persona": llm_result.get('persona', 'Scammer')
+              "upiIds": list(set(regex_data['upiIds'] + llm_result.get('upiIds', []))),
+              "phoneNumbers": list(set(regex_data['phoneNumbers'] + llm_result.get('phoneNumbers', []))),
+              "phishingLinks": list(set(regex_data['phishingLinks'] + llm_result.get('phishingLinks', []))),
+              "bankAccounts": list(set(regex_data['bankAccounts'] + llm_result.get('bankAccounts', []))),
+              "suspiciousKeywords": list(set(llm_result.get('suspiciousKeywords', []))),
+              "language": llm_result.get('detectedLanguage', 'Multilingual'),
+              "persona": llm_result.get('persona', 'Scammer'),
+              "scamType": llm_result.get('scamType', 'Unknown')
             }
-            session.intel["confidence"] = min(
-              0.95,0.4 + 0.15 * (
-              len(session.intel["upiIds"]) +
-              len(session.intel["phoneNumbers"]) +
-              len(session.intel["phishingLinks"])
-              ))
-            if ( len(session.intel["upiIds"]) > 0 or
-                  len(session.intel["phishingLinks"]) > 0 or
-                  len(session.intel["phoneNumbers"]) > 0
-                  ):
-                      session.finished = True
+
+            signals = (
+                len(session.intel["upiIds"]) * 2 +
+                len(session.intel["phoneNumbers"]) * 2 +
+                len(session.intel["phishingLinks"]) * 3 +
+                len(session.intel["suspiciousKeywords"])
+            )
+
+            session.intel["confidence"] = min(0.99, 0.3 + 0.08 * signals)
+
+            if (
+                len(session.intel["upiIds"]) +
+                len(session.intel["phishingLinks"]) +
+                len(session.intel["phoneNumbers"])
+                ) >= 2:
+                  session.finished = True
 
 
             # Update agentNotes so Teammate B has context for the GUVI callback
