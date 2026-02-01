@@ -26,7 +26,21 @@ async def process(request: Request, x_api_key: str = Header(...)):
 
     # GUVI-safe parsing
     session_id = body.get("sessionId", "default")
-    text = body.get("message") or body.get("text") or ""
+    text = (
+    body.get("message") or
+    body.get("text") or
+    body.get("msg") or
+    body.get("data", {}).get("message") or
+    body.get("data", {}).get("text") or
+    ""
+    )
+
+    if not text:
+      return {
+        "status": "error",
+        "reason": "No message provided"
+    }
+
 
     session = get_session(session_id)
 
