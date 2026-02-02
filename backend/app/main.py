@@ -23,6 +23,7 @@ async def process(request: Request, x_api_key: str = Header(...)):
         raise HTTPException(status_code=403, detail="Invalid API key")
 
     body = await request.json()
+    print("GUVI REQUEST BODY: " ,body)
 
     # GUVI-safe parsing
     session_id = body.get("sessionId", "default")
