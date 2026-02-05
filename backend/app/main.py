@@ -70,8 +70,8 @@ async def process(request: Request, x_api_key: str = Header(...)):
 
 
 
-
-@app.get("/", response_class=HTMLResponse , status_code=200)
+@app.head("/")
+@app.get("/", response_class=HTMLResponse, status_code=200)
 async def root_page():
     return """
     <!DOCTYPE html>
