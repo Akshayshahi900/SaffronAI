@@ -1,6 +1,6 @@
 import os
 from fastapi import FastAPI, Header, HTTPException, Request
-
+from fastapi.responses import HTMLResponse
 from app.session_manager import get_session
 from app.agent.agent import agent_reply
 from app.intelligence.intelligence import IntelligenceExtractor
@@ -69,9 +69,9 @@ async def process(request: Request, x_api_key: str = Header(...)):
     }
 
 
-from fastapi.responses import HTMLResponse
 
-@app.get("/", response_class=HTMLResponse)
+
+@app.get("/", response_class=HTMLResponse , status_code=200)
 async def root_page():
     return """
     <!DOCTYPE html>
