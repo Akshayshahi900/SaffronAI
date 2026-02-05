@@ -67,3 +67,11 @@ async def process(request: Request, x_api_key: str = Header(...)):
         "status": "success",
         "reply": reply
     }
+
+
+@app.get("/")
+async def health_check():
+    return {
+        "status": "ok",
+        "service": "honeypot-api"
+    }
