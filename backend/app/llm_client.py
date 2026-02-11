@@ -10,7 +10,7 @@ def call_llm(prompt, json_mode=False):
             {"role": "system", "content": "You are a helpful assistant"},
             {"role": "user", "content": prompt}
         ],
-        temperature=0.3
+        temperature=0.2
     )
 
     text = completion.choices[0].message.content.strip()
