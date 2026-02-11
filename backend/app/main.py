@@ -1,6 +1,6 @@
 import os
 from fastapi import FastAPI, Header, HTTPException, Request
-from dotenv import load_dotenv
+from fastapi.responses import HTMLResponse
 from app.session_manager import get_session
 from app.agent.agent import agent_reply
 from app.intelligence.intelligence import IntelligenceExtractor
@@ -23,7 +23,7 @@ async def process(request: Request, x_api_key: str = Header(...)):
         raise HTTPException(status_code=403, detail="Invalid API key")
 
     body = await request.json()
-    print("GUVI REQUEST BODY: " ,body)
+    # print("GUVI REQUEST BODY: " ,body)
 
     # GUVI-safe parsing
     session_id = body.get("sessionId", "default")
@@ -79,9 +79,48 @@ async def process(request: Request, x_api_key: str = Header(...)):
     }
 
 
-@app.get("/")
-async def health_check():
-    return {
-        "status": "ok",
-        "service": "honeypot-api"
-    }
+
+@app.head("/")
+@app.get("/", response_class=HTMLResponse, status_code=200)
+async def root_page():
+    return """
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>Honeypot API</title>
+        <style>
+            body {
+                font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+                background: #0f172a;
+                color: #e5e7eb;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                height: 100vh;
+                margin: 0;
+            }
+            .card {
+                background: #020617;
+                border: 1px solid #1e293b;
+                padding: 24px 32px;
+                border-radius: 12px;
+                text-align: center;
+                box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+            }
+            .status {
+                color: #22c55e;
+                font-size: 1.2rem;
+                margin-top: 8px;
+            }
+        </style>
+    </head>
+    <body>
+        <div class="card">
+            <h1>🛡 Honeypot API</h1>
+            <div class="status">Status: OK</div>
+        </div>
+    </body>
+    </html>
+    """
+
