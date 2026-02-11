@@ -24,6 +24,25 @@ def agent_reply(session):
     for m in recent_history:
         conversation += f'{m["sender"]}: {m["text"]}\n'
 
+    last_scammer_msg = session.history[-1]["text"].lower()
+
+    dynamic_instruction = ""
+
+    instructions = []
+
+    if "upi pin" in last_scammer_msg:
+        instructions.append("You are confused about UPI PIN. Ask whether it is ATM PIN or something else.")
+
+    if "otp" in last_scammer_msg:
+        instructions.append("You say you are opening PhonePe and ask them to resend UPI ID or QR code.")
+
+    if "transfer" in last_scammer_msg:
+        instructions.append("Ask for transaction ID and exact timestamp of the transfer.")
+
+    if "call" in last_scammer_msg or "+91" in last_scammer_msg:
+        instructions.append("Ask if there is another official SBI number or email confirmation.")
+
+    dynamic_instruction = "\n".join(instructions)
     prompt = f"""
 {persona}
 
@@ -52,6 +71,9 @@ Rules:
 - If asked for OTP → ask what transaction it is for
 - If bank is mentioned → ask if it is SBI, HDFC, ICICI etc
 - If a link is mentioned → ask if it is official
+
+Additional behavior instruction:
+{dynamic_instruction}
 
 Reply naturally as the USER.
 Only output the message.
