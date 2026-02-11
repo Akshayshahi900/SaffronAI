@@ -24,15 +24,18 @@ def agent_reply(session):
     for m in recent_history:
       sender = m.get("sender", "unknown")
       text = m.get("text", "")
-      conversation += f"{sender}: {text}\n"
+      conversation += f"{sender}: {str(text)}\n"
+
 
 
 
     # Safe extraction of last scammer message
-    if session.history and isinstance(session.history[-1], dict):
-        last_scammer_msg = session.history[-1].get("text", "").lower()
-    else:
-        last_scammer_msg = ""
+    last_scammer_msg = ""
+
+    if session.history:
+        raw_text = session.history[-1].get("text", "")
+        last_scammer_msg = str(raw_text).lower()
+
 
     dynamic_instruction = ""
 

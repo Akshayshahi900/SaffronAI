@@ -1,11 +1,11 @@
 import os
 from fastapi import FastAPI, Header, HTTPException, Request
-
+from dotenv import load_dotenv
 from app.session_manager import get_session
 from app.agent.agent import agent_reply
 from app.intelligence.intelligence import IntelligenceExtractor
 from app.guvi_client import send_final_result
-
+load_dotenv()
 API_KEY = os.getenv("HONEYPOT_API_KEY")
 
 app = FastAPI()
@@ -27,14 +27,24 @@ async def process(request: Request, x_api_key: str = Header(...)):
 
     # GUVI-safe parsing
     session_id = body.get("sessionId", "default")
-    text = (
-    body.get("message") or
-    body.get("text") or
-    body.get("msg") or
-    body.get("data", {}).get("message") or
-    body.get("data", {}).get("text") or
-    ""
-    )
+    raw_message = body.get("message")
+
+    if isinstance(raw_message, dict):
+        text = raw_message.get("text", "")
+    elif isinstance(raw_message, str):
+        text = raw_message
+    else:
+        text = (
+            body.get("text") or
+            body.get("msg") or
+            body.get("data", {}).get("message") or
+            body.get("data", {}).get("text") or
+            ""
+        )
+
+    # Normalize to string ALWAYS
+    text = str(text)
+
 
     if not text:
       return {
