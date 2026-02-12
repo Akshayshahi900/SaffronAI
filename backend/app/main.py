@@ -150,11 +150,10 @@ async def process(request: Request, x_api_key: str = Header(...)):
     except Exception as e:
         logger.warning(f"Intel extraction failed for session {session_id}: {e}")
 
-    if session.finished:
-        try:
-            send_final_result(session)
-        except Exception as e:
-            logger.error(f"send_final_result failed for session {session_id}: {e}")
+    if session.finished and not getattr(session, "callbackSent", False):
+     send_final_result(session)
+     session.callbackSent = True
+
 
     return {"status": "success", "reply": reply}
 

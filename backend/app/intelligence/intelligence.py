@@ -82,13 +82,19 @@ Return ONLY a JSON object:
 
             infer_attack_flow(session)
             calculate_risk(session)
+          #  we are sending callback after every intel not waiting for callback because our server can server can crash in          between
+            intel_count = (
+              len(session.intel.get("upiIds", [])) +
+              len(session.intel.get("phishingLinks", [])) +
+              len(session.intel.get("phoneNumbers", [])) +
+              len(session.intel.get("bankAccounts", []))
+           )
 
-            if (
-                len(session.intel["upiIds"]) +
-                len(session.intel["phishingLinks"]) +
-                len(session.intel["phoneNumbers"])
-            ) >= 2:
-                session.finished = True
+          #   if intel_count >= 1 and len(session.history) >= 6:
+          #     session.finished = True
+            if intel_count >= 1:
+              session.finished = True
+
 
             session.agentNotes = f"Language: {session.intel['language']} | Persona: {session.intel['persona']}"
 
