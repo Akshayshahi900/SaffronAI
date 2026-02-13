@@ -8,7 +8,7 @@ class IntelligenceExtractor:
             "upiIds": r'[a-zA-Z0-9.\-_]{2,256}@[a-zA-Z]{2,64}',
             "bankAccounts": r'(?:account|a\/c|acc|bank)\D{0,10}(\d{10,16})',
             "phishingLinks": r'https?://(?:[-\w.]|(?:%[\da-fA-F]{2}))+[/\w\.-]*',
-            "phoneNumbers": r'\b(?:\+91|91)?[6-9]\d{9}\b'
+            "phoneNumbers": r'\b(?:\+91[-\s]?|91[-\s]?)?[6-9]\d{9}\b'
         }
 
     def _regex_step(self, text):
@@ -82,7 +82,9 @@ Return ONLY a JSON object:
 
             infer_attack_flow(session)
             calculate_risk(session)
-          #  we are sending callback after every intel not waiting for callback because our server can server can crash in          between
+
+
+            #session.finished =true
             intel_count = (
               len(session.intel.get("upiIds", [])) +
               len(session.intel.get("phishingLinks", [])) +
@@ -96,7 +98,7 @@ Return ONLY a JSON object:
               session.finished = True
 
 
-            session.agentNotes = f"Language: {session.intel['language']} | Persona: {session.intel['persona']}"
+            session.agentNotes = f"Language: {session.intel['language']} | Role: Honeypot Victim"
 
         except Exception as e:
             print(f"Extraction Error: {e}")
