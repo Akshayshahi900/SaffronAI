@@ -3,6 +3,7 @@
 import requests
 
 GUVI_URL = "https://hackathon.guvi.in/api/updateHoneyPotFinalResult"
+# GUVI_URL = "http://127.0.0.1:9000"
 
 def send_final_result(session):
     payload = {
