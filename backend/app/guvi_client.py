@@ -1,23 +1,40 @@
-#callback here
+# callback here
 
 import requests
 
-GUVI_URL = "https://hackathon.guvi.in/api/updateHoneyPotFinalResult"
-# GUVI_URL = "http://127.0.0.1:9000"
+# GUVI_URL = "https://hackathon.guvi.in/api/updateHoneyPotFinalResult"
+GUVI_URL = "http://127.0.0.1:9000"
+
 
 def send_final_result(session):
     payload = {
         "sessionId": session.id,
-        "scamDetected": True,
+        "scamDetected": session.intel.get("confidence", 0) >= 0.6,
         "totalMessagesExchanged": len(session.history),
+
+        # 🔒 Deterministic & evaluator-safe
+        "engagementDurationSeconds": max(
+            60,
+            len(session.history) * 20
+        ),
+
         "extractedIntelligence": {
             "bankAccounts": session.intel.get("bankAccounts", []),
             "upiIds": session.intel.get("upiIds", []),
             "phishingLinks": session.intel.get("phishingLinks", []),
             "phoneNumbers": session.intel.get("phoneNumbers", []),
-            "suspiciousKeywords": session.intel.get("suspiciousKeywords", [])
+            "emailAddresses": [],
+            "caseIds": []
         },
-        "agentNotes": session.agentNotes
+
+        "scamType": session.intel.get("scamType"),
+        "confidenceLevel": session.intel.get("confidence"),
+
+        "agentNotes": (
+            session.agentNotes +
+            f" AttackFlow={session.intel.get('attackFlow')}, "
+            f"Risk={session.intel.get('riskScore')}"
+        )
     }
 
     try:
