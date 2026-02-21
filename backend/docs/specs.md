@@ -1,169 +1,222 @@
-# 🛡️ SaffronAI – Agentic Scam Honeypot
+```md
+# 🛡️ Agentic Honeypot for Scam Detection & Intelligence
 
-SaffronAI is an **AI-powered conversational honeypot** designed to **engage scammers in real time**, extract actionable intelligence, and report threats reliably — **without alerting the attacker**.
+An AI-powered honeypot system that detects scam messages, autonomously engages scammers using a human-like AI agent, extracts scam intelligence, and reports it to the GUVI evaluation system.
 
-Built for the **HCL × GUVI Hackathon**, the system prioritizes **reliability and real-world robustness over perfect classification**.
-
-
-## 🚀 What SaffronAI Does
-
-SaffronAI pretends to be a **real Indian banking user**, interacts naturally with scammers, and extracts key forensic indicators such as:
-
-- UPI IDs
-- Bank account numbers
-- Phone numbers
-- Phishing links
-- Scam intent and social-engineering patterns
-
-Once sufficient intelligence is collected, it **automatically reports the scam session** to the GUVI backend.
+Built for the **GUVI Agentic Honey-Pot Challenge**.
 
 ---
 
-## 🧠 Core Capabilities
+## 🚀 What We Are Building
 
-### 1️⃣ Real-Time Scam Engagement
+We are deploying a **public REST API** that:
 
-- Acts like a genuine Indian user (UPI, PhonePe, GPay, Paytm)
-- Uses realistic personas (working professional, shop owner, retired user)
-- Never accuses or alerts the scammer
-- Keeps the scammer engaged naturally
+1. Receives suspected scam messages
+2. Detects scam intent
+3. Activates an autonomous AI agent
+4. Engages scammers in multi-turn conversations
+5. Extracts scam intelligence (UPI, links, phone numbers, etc.)
+6. Sends the final results to GUVI’s callback API
 
-Supports:
-
-- OTP scams
-- KYC scams
-- Bank impersonation
-- UPI/payment redirection
-- Refund & lottery scams
+This is not a chatbot — it is a **fraud intelligence trap**.
 
 ---
 
-### 2️⃣ Context-Aware Prompt Steering
+## 🧠 High-Level Architecture
+```
 
-Responses dynamically adapt based on scammer behavior:
+Incoming Message (GUVI)
+↓
+Scam Detection Engine
+↓
+(if scam)
+Honeypot AI Agent (human-like)
+↓
+Intelligence Extractor
+↓
+Session Store
+↓
+Final Callback → GUVI API
 
-- OTP mentioned → asks what transaction it’s for
-- UPI mentioned → asks for QR or UPI ID
-- Phone number shared → asks for official verification
-- Increased urgency → increases confusion and verification
+```
 
-This increases:
-
-- Engagement duration
-- Intelligence yield
-- Realism of the conversation
-
----
-
-### 3️⃣ Hybrid Intelligence Extraction (Regex + LLM)
-
-**Deterministic (Regex):**
-
-- UPI IDs
-- Phone numbers (+91 supported)
-- Bank account numbers
-- URLs / phishing links
-
-**Semantic (LLM):**
-
-- Scam intent
-- Scam type (OTP, KYC, Bank Impersonation, etc.)
-- Urgency and threat signals
-- Language detection
-- Persona inference
-
-This hybrid approach avoids single-point failures.
+Each API call represents **one message** in a conversation.
+We maintain memory using **sessionId**.
 
 ---
 
-### 4️⃣ Multilingual Scam Support
+## 🗂️ Project Structure
 
-- Works with **English, Hindi, and Hinglish**
-- Semantic understanding handled by LLM
-- Numeric artifacts extracted reliably via regex
+```
 
-Example:
-₹1 ट्रांसफर करें scammer@upi
-→ UPI ID extracted successfully.
+/app
+├── main.py # FastAPI server (Teammate B)
+├── session_manager.py # Session storage (Teammate B)
+├── guvi_client.py # Final callback to GUVI (Teammate B)
+├── llm_client.py # Shared LLM access
+├── agent.py # Honeypot AI (You)
+├── intelligence.py # Data extraction (You + Teammate A)
 
-### 5️⃣ Scam Flow Reconstruction
+````
 
-Automatically reconstructs the attacker’s flow:
+---
 
-- Bank impersonation
-- Fear creation (account blocked)
-- KYC pressure
-- Payment redirection
-- Direct contact escalation
+## 🧩 Core Data Object
 
-Useful for SOC teams and incident analysis.
+All modules operate on a shared **Session** object.
 
-### 6️⃣ Risk & Impact Estimation
+```python
+class Session:
+    id: str
+    history: list   # [{sender, text, timestamp}]
+    scamDetected: bool
+    intel: dict
+    finished: bool
+    agentNotes: str
+````
 
-Each session includes:
+The API layer stores and passes this object to all modules.
 
-- Scam confidence score
-- Risk score
-- Estimated potential financial loss (₹ range)
+---
 
-Helps prioritize high-risk incidents.
+## 🤖 Honeypot AI (agent.py)
 
-### 7️⃣ Reliable Callback System
+**Owner:** You
 
-- Sends extracted intelligence to GUVI automatically
-- Triggered as soon as **sufficient evidence** is available
-- Prevents duplicate callbacks
-- Safe against mid-conversation crashes
+You implement:
 
-Designed for **reliability, not overfitting**.
+```python
+def agent_reply(session) -> str
+```
 
+The agent:
 
-## 🧩 Design Philosophy
+- Acts like a real Indian bank user
+- Is worried but believable
+- Tries to extract:
+  - UPI IDs
+  - Phone numbers
+  - Links
+  - Bank accounts
 
-> **Reliability over perfection**
+- Never accuses or reveals detection
 
-- No rigid rule-based scam detection
-- Assumes malicious intent by default
-- Extracts intelligence as soon as it becomes actionable
-- Fails gracefully without breaking the conversation
+The agent only sees:
 
+```python
+session.history
+```
 
+It returns the **next user reply** to send to the scammer.
 
-## 🚫 Intentional Limitations
+---
 
-To avoid overclaiming:
+## 🧪 Intelligence Extraction (intelligence.py)
 
-- No audio/image analysis
-- No written-amount-to-number conversion
-- No blocking or warning scammers
-- No dependency on language-specific rules
+**Owners:** You + Teammate A
 
-These are conscious design decisions.
+You implement:
 
-## 🏗️ Architecture Overview
+```python
+def extract_intel(session)
+```
 
-backend/
-├── app/
-│   ├── agent/           # Conversational honeypot logic
-│   ├── intelligence/    # Intelligence extraction & scoring
-│   ├── session_manager/ # Session handling
-│   ├── llm_client.py    # Groq LLM integration
-│   ├── guvi_client.py   # Callback sender
-│   └── main.py          # FastAPI entrypoint
+It scans all messages and updates:
 
-## 🌐 Deployment
+```python
+session.intel = {
+  "upiIds": [],
+  "phoneNumbers": [],
+  "phishingLinks": [],
+  "bankAccounts": [],
+  "suspiciousKeywords": []
+}
+```
 
-- Hosted on **Render**
-- Public HTTPS API
-- Secured using `x-api-key` header
-- Environment variables managed via `.env` (local) or platform secrets (production)
+Uses:
 
+- Regex for exact patterns
+- LLM for fuzzy or hidden data
 
-## 🏁 One-Line Summary
+This runs **after every message**.
 
-> **SaffronAI is an AI-driven conversational honeypot that safely engages scammers, adapts in real time, extracts actionable intelligence across languages, and reports threats reliably without alerting the attacker.**
+---
 
-## 📌 Hackathon Context
+## 🔗 LLM Access (llm_client.py)
 
-Built for: **HCL × GUVI Hackathon**
-Problem Domain: **Fraud Detection & User Safety**
+All AI calls go through:
+
+```python
+def call_llm(prompt, json=False):
+    ...
+```
+
+We use **API-based LLMs** (OpenAI, Gemini, Groq, Claude, etc.)
+Local LLMs are **not used** due to reliability and deployment issues.
+
+---
+
+## 🌐 API Layer (main.py)
+
+**Owner:** Teammate B
+
+Endpoint:
+
+```
+POST /api/message
+Header: x-api-key
+```
+
+Flow:
+
+1. Load session
+2. Append incoming message
+3. Run scam detection
+4. If scam → call agent
+5. Add agent reply
+6. Run intelligence extraction
+7. If enough data → call GUVI callback
+8. Return agent reply
+
+---
+
+## 📡 GUVI Final Callback (Mandatory)
+
+When a scam session finishes, we POST:
+
+```json
+{
+  "sessionId": "...",
+  "scamDetected": true,
+  "totalMessagesExchanged": 18,
+  "extractedIntelligence": { ... },
+  "agentNotes": "Used urgency and UPI redirection"
+}
+```
+
+To:
+
+```
+https://hackathon.guvi.in/api/updateHoneyPotFinalResult
+```
+
+⚠️ If this is not sent → **No evaluation score**
+
+---
+
+## 🏆 How We Win
+
+We win by:
+
+- Making the agent feel human
+- Keeping scammers engaged
+- Extracting real, usable scam data
+- Returning clean, structured intelligence
+
+This is a **real-world grade AI honeypot**, not a chatbot.
+
+---
+
+```
+::contentReference[oaicite:0]{index=0}
+```

@@ -1,5 +1,5 @@
 ```md
-# 🧠 SAFFRON AI — Agentic Scam Honeypot
+# 🧠 SAFFRON AI — Vision & System Overview
 
 ### Autonomous Cyber-Intelligence Platform for Financial Fraud Detection
 
@@ -176,7 +176,4 @@ By a team focused on **real-world cybercrime prevention**.
 
 ---
 
-```
-
-If you want, next I can help you write a **short judge pitch** or a **GUVI submission description**.
 ```
