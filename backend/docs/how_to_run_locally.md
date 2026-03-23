@@ -6,7 +6,7 @@ From `backend/`:
 export GROQ_API_KEY="your_groq_key"
 export HONEYPOT_API_KEY="test-secret"
 
-uvicorn app.main:app --reload --port 8000
+uvicorn app.api.main:app --reload --port 8000
 ```
 
 Check health:
