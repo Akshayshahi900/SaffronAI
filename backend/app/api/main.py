@@ -1,7 +1,7 @@
 import os
 import logging
 from dotenv import load_dotenv
-
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi import FastAPI, Header, HTTPException, Request
 from fastapi.responses import HTMLResponse
 
@@ -17,6 +17,13 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 app = FastAPI()
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # for dev (later restrict this)
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 extractor = IntelligenceExtractor()
 
 
