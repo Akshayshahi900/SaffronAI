@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -24,6 +24,24 @@ interface Intel {
   potentialLossINR: string;
 }
 
+interface CallbackPayload {
+  sessionId: string;
+  scamDetected: boolean;
+  totalMessagesExchanged: number;
+  engagementDurationSeconds: number;
+  extractedIntelligence: {
+    bankAccounts: string[];
+    upiIds: string[];
+    phishingLinks: string[];
+    phoneNumbers: string[];
+    emailAddresses: string[];
+    caseIds: string[];
+  };
+  scamType: string | null;
+  confidenceLevel: number;
+  agentNotes: string;
+}
+
 interface Preset {
   label: string;
   category: string;
@@ -31,7 +49,7 @@ interface Preset {
   messages: string[];
 }
 
-// ── Constants ────────────────────────────────────────────────────────────────
+// ── Constants ─────────────────────────────────────────────────────────────────
 
 const PRESETS: Preset[] = [
   {
@@ -93,7 +111,7 @@ const QUICK_FIRE = [
 
 const API_URL = "http://127.0.0.1:8000";
 
-// ── Sub-components ───────────────────────────────────────────────────────────
+// ── Sub-components ─────────────────────────────────────────────────────────────
 
 function Badge({
   color,
@@ -102,10 +120,7 @@ function Badge({
   color: BadgeColor;
   children: React.ReactNode;
 }) {
-  const colors: Record<
-    BadgeColor,
-    { bg: string; text: string; border: string }
-  > = {
+  const colors: Record<BadgeColor, { bg: string; text: string; border: string }> = {
     green: { bg: "#0a2218", text: "#4ade80", border: "#166534" },
     amber: { bg: "#221a05", text: "#fbbf24", border: "#92400e" },
     red: { bg: "#220a0a", text: "#f87171", border: "#991b1b" },
@@ -192,7 +207,139 @@ function IntelItem({
   );
 }
 
-// ── Main component ───────────────────────────────────────────────────────────
+// ── Callback Panel ─────────────────────────────────────────────────────────────
+
+function CallbackPanel({ payload }: { payload: CallbackPayload }) {
+  const [expanded, setExpanded] = useState(false);
+  const intel = payload.extractedIntelligence;
+  const totalExtracted =
+    intel.upiIds.length +
+    intel.bankAccounts.length +
+    intel.phoneNumbers.length +
+    intel.phishingLinks.length;
+
+  return (
+    <div
+      style={{
+        marginTop: 8,
+        background: "#020d06",
+        border: "1px solid #14532d",
+        borderRadius: 8,
+        overflow: "hidden",
+        animation: "slideIn 0.4s ease",
+      }}
+    >
+      {/* Header */}
+      <div
+        style={{
+          background: "#0a2218",
+          borderBottom: "1px solid #14532d",
+          padding: "8px 12px",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+        }}
+      >
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <span
+            style={{
+              width: 7,
+              height: 7,
+              borderRadius: "50%",
+              background: "#4ade80",
+              boxShadow: "0 0 6px #4ade80",
+              display: "inline-block",
+            }}
+          />
+          <span style={{ fontSize: 11, color: "#4ade80", fontWeight: 600, letterSpacing: "0.1em" }}>
+            GUVI CALLBACK FIRED
+          </span>
+        </div>
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <Badge color={payload.scamDetected ? "red" : "gray"}>
+            {payload.scamDetected ? "SCAM CONFIRMED" : "INCONCLUSIVE"}
+          </Badge>
+          <button
+            onClick={() => setExpanded((e) => !e)}
+            style={{
+              background: "none",
+              border: "1px solid #1f2937",
+              borderRadius: 3,
+              color: "#6b7280",
+              padding: "2px 8px",
+              cursor: "pointer",
+              fontSize: 10,
+              fontFamily: "inherit",
+            }}
+          >
+            {expanded ? "COLLAPSE" : "EXPAND"}
+          </button>
+        </div>
+      </div>
+
+      {/* Summary row */}
+      <div
+        style={{
+          padding: "8px 12px",
+          display: "flex",
+          gap: 16,
+          flexWrap: "wrap",
+          borderBottom: expanded ? "1px solid #0f2920" : "none",
+        }}
+      >
+        {[
+          { label: "Messages", val: payload.totalMessagesExchanged },
+          { label: "Duration", val: `${payload.engagementDurationSeconds}s` },
+          { label: "Confidence", val: `${(payload.confidenceLevel * 100).toFixed(0)}%` },
+          { label: "Intel Items", val: totalExtracted },
+        ].map(({ label, val }) => (
+          <div key={label} style={{ display: "flex", flexDirection: "column", gap: 2 }}>
+            <span style={{ fontSize: 9, color: "#4b5563", letterSpacing: "0.1em", textTransform: "uppercase" }}>
+              {label}
+            </span>
+            <span style={{ fontSize: 13, color: "#4ade80", fontWeight: 600 }}>{val}</span>
+          </div>
+        ))}
+      </div>
+
+      {/* Expanded: full JSON */}
+      {expanded && (
+        <div style={{ padding: "10px 12px" }}>
+          <div
+            style={{
+              fontSize: 10,
+              color: "#4b5563",
+              letterSpacing: "0.1em",
+              textTransform: "uppercase",
+              marginBottom: 6,
+            }}
+          >
+            Full Payload →
+          </div>
+          <pre
+            style={{
+              background: "#0a0a0a",
+              border: "1px solid #1f2937",
+              borderRadius: 6,
+              padding: 10,
+              fontSize: 10,
+              color: "#4ade80",
+              overflowX: "auto",
+              lineHeight: 1.5,
+              maxHeight: 220,
+              overflowY: "auto",
+              margin: 0,
+            }}
+          >
+            {JSON.stringify(payload, null, 2)}
+          </pre>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── Main component ─────────────────────────────────────────────────────────────
 
 export default function SaffronUI() {
   const [apiUrl, setApiUrl] = useState(API_URL);
@@ -203,65 +350,200 @@ export default function SaffronUI() {
   const [intel, setIntel] = useState<Intel | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [presetStep, setPresetStep] = useState<Record<number, number>>({});
-  const [callbackLog, setCallbackLog] = useState<unknown>(null);
-  const [activePreset, setActivePreset] = useState<number | null>(null);
+  const [callbackPayload, setCallbackPayload] = useState<CallbackPayload | null>(null);
+  const [callbackStatus, setCallbackStatus] = useState<"idle" | "fired" | "polling">("idle");
   const [settingsOpen, setSettingsOpen] = useState(false);
+
+  // Auto-run preset state
+  const [autoRunPreset, setAutoRunPreset] = useState<{
+    idx: number;
+    step: number;
+    messages: string[];
+  } | null>(null);
+  const [presetStep, setPresetStep] = useState<Record<number, number>>({});
+  const [activePreset, setActivePreset] = useState<number | null>(null);
+
   const chatEndRef = useRef<HTMLDivElement>(null);
+  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const isRunningRef = useRef(false);
 
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, loading]);
 
-  async function sendMessage(text: string) {
-    if (!text.trim()) return;
-    setError(null);
+  // ── Core send function ──────────────────────────────────────────────────────
 
-    setMessages((prev) => [
-      ...prev,
-      { sender: "scammer", text, ts: Date.now() },
-    ]);
-    setLoading(true);
-
-    try {
-      const res = await fetch(`${apiUrl}/api/message`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json", "x-api-key": apiKey },
-        body: JSON.stringify({ sessionId, message: text }),
-      });
-
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({ detail: res.statusText }));
-        throw new Error(
-          (err as { detail?: string }).detail ?? `HTTP ${res.status}`,
-        );
-      }
-
-      const data = (await res.json()) as {
-        reply?: string;
-        intel?: Intel;
-        callbackPayload?: unknown;
-      };
+  const sendMessage = useCallback(
+    async (text: string): Promise<{ finished?: boolean; callbackPayload?: CallbackPayload } | null> => {
+      if (!text.trim()) return null;
+      setError(null);
 
       setMessages((prev) => [
         ...prev,
-        { sender: "honeypot", text: data.reply ?? "", ts: Date.now() },
+        { sender: "scammer", text, ts: Date.now() },
       ]);
-      if (data.intel) setIntel(data.intel);
-      if (data.callbackPayload) setCallbackLog(data.callbackPayload);
-    } catch (e) {
-      setError(e instanceof Error ? e.message : String(e));
-    } finally {
-      setLoading(false);
-    }
-  }
+      setLoading(true);
 
-  function sendPresetNext(preset: Preset, idx: number) {
+      try {
+        const res = await fetch(`${apiUrl}/api/message`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "x-api-key": apiKey },
+          body: JSON.stringify({ sessionId, message: text }),
+        });
+
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({ detail: res.statusText }));
+          throw new Error((err as { detail?: string }).detail ?? `HTTP ${res.status}`);
+        }
+
+        const data = (await res.json()) as {
+          reply?: string;
+          intel?: Intel;
+          callbackPayload?: CallbackPayload;
+          finished?: boolean;
+          session_finished?: boolean;
+        };
+
+        setMessages((prev) => [
+          ...prev,
+          { sender: "honeypot", text: data.reply ?? "(no reply)", ts: Date.now() },
+        ]);
+
+        if (data.intel) setIntel(data.intel);
+
+        // Backend may return callback payload directly, or signal session finished
+        if (data.callbackPayload) {
+          setCallbackPayload(data.callbackPayload);
+          setCallbackStatus("fired");
+        }
+
+        const isFinished = data.finished || data.session_finished || false;
+        return { finished: isFinished, callbackPayload: data.callbackPayload };
+      } catch (e) {
+        setError(e instanceof Error ? e.message : String(e));
+        return null;
+      } finally {
+        setLoading(false);
+      }
+    },
+    [apiUrl, apiKey, sessionId]
+  );
+
+  // ── Poll for callback (if backend fires it silently to GUVI) ───────────────
+  // After session might be finished, poll /api/session/{id}/callback or /api/session/{id}
+  // to detect the callback payload if backend doesn't return it inline.
+
+  const startPollingForCallback = useCallback(() => {
+    if (pollRef.current) return;
+    setCallbackStatus("polling");
+    let attempts = 0;
+    pollRef.current = setInterval(async () => {
+      attempts++;
+      try {
+        // Try a dedicated callback status endpoint first
+        const res = await fetch(`${apiUrl}/api/session/${sessionId}`, {
+          headers: { "x-api-key": apiKey },
+        });
+        if (res.ok) {
+          const data = await res.json() as {
+            finished?: boolean;
+            session_finished?: boolean;
+            callbackPayload?: CallbackPayload;
+            callback_sent?: boolean;
+            intel?: Intel;
+          };
+          if (data.intel) setIntel(data.intel);
+          if (data.callbackPayload) {
+            setCallbackPayload(data.callbackPayload);
+            setCallbackStatus("fired");
+            if (pollRef.current) clearInterval(pollRef.current);
+            pollRef.current = null;
+            return;
+          }
+          if (data.callback_sent || data.finished || data.session_finished) {
+            // Callback was sent but payload not returned; construct from intel
+            setCallbackStatus("fired");
+            if (pollRef.current) clearInterval(pollRef.current);
+            pollRef.current = null;
+          }
+        }
+      } catch {
+        // Endpoint may not exist — that's fine, stop after 10 attempts
+      }
+      if (attempts >= 10) {
+        if (pollRef.current) clearInterval(pollRef.current);
+        pollRef.current = null;
+        setCallbackStatus("idle");
+      }
+    }, 1500);
+  }, [apiUrl, apiKey, sessionId]);
+
+  useEffect(() => {
+    return () => {
+      if (pollRef.current) clearInterval(pollRef.current);
+    };
+  }, []);
+
+  // ── Auto-run preset sequence (one-by-one with LLM reply in between) ─────────
+
+  useEffect(() => {
+    if (!autoRunPreset) return;
+    if (isRunningRef.current) return;
+
+    const run = async () => {
+      isRunningRef.current = true;
+      const { idx, step, messages: presetMsgs } = autoRunPreset;
+
+      if (step >= presetMsgs.length) {
+        // Sequence finished — start polling for callback
+        setAutoRunPreset(null);
+        isRunningRef.current = false;
+        startPollingForCallback();
+        return;
+      }
+
+      const msg = presetMsgs[step];
+      setPresetStep((prev) => ({ ...prev, [idx]: step + 1 }));
+
+      const result = await sendMessage(msg);
+
+      isRunningRef.current = false;
+
+      if (result?.callbackPayload) {
+        // Callback already received inline
+        setAutoRunPreset(null);
+        return;
+      }
+
+      if (result?.finished) {
+        setAutoRunPreset(null);
+        startPollingForCallback();
+        return;
+      }
+
+      // Schedule next turn
+      if (step + 1 < presetMsgs.length) {
+        setTimeout(() => {
+          setAutoRunPreset((prev) =>
+            prev ? { ...prev, step: prev.step + 1 } : null
+          );
+        }, 600);
+      } else {
+        setAutoRunPreset(null);
+        startPollingForCallback();
+      }
+    };
+
+    run();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [autoRunPreset]);
+
+  function startPresetAutoRun(preset: Preset, idx: number) {
+    if (loading || isRunningRef.current) return;
     const step = presetStep[idx] ?? 0;
     if (step >= preset.messages.length) return;
     setActivePreset(idx);
-    sendMessage(preset.messages[step]);
-    setPresetStep((prev) => ({ ...prev, [idx]: step + 1 }));
+    setAutoRunPreset({ idx, step, messages: preset.messages });
   }
 
   function resetSession() {
@@ -269,18 +551,37 @@ export default function SaffronUI() {
     setSessionId(newId);
     setMessages([]);
     setIntel(null);
-    setCallbackLog(null);
+    setCallbackPayload(null);
+    setCallbackStatus("idle");
     setError(null);
     setPresetStep({});
     setActivePreset(null);
+    setAutoRunPreset(null);
     setCustomMsg("");
+    isRunningRef.current = false;
+    if (pollRef.current) {
+      clearInterval(pollRef.current);
+      pollRef.current = null;
+    }
+  }
+
+  async function handleSendCustom() {
+    if (!customMsg.trim() || loading) return;
+    const msg = customMsg;
+    setCustomMsg("");
+    const result = await sendMessage(msg);
+    if (result?.finished || result?.callbackPayload) {
+      if (!result.callbackPayload) startPollingForCallback();
+    }
   }
 
   const confidence = intel?.confidence ?? 0;
   const confColor =
     confidence >= 0.75 ? "#4ade80" : confidence >= 0.5 ? "#fbbf24" : "#9ca3af";
 
-  // ── Render ─────────────────────────────────────────────────────────────────
+  const isAutoRunning = autoRunPreset !== null || isRunningRef.current;
+
+  // ── Render ──────────────────────────────────────────────────────────────────
 
   return (
     <div
@@ -316,24 +617,23 @@ export default function SaffronUI() {
             }}
           />
           <span
-            style={{
-              fontSize: 13,
-              fontWeight: 600,
-              letterSpacing: "0.08em",
-              color: "#f1f5f9",
-            }}
+            style={{ fontSize: 13, fontWeight: 600, letterSpacing: "0.08em", color: "#f1f5f9" }}
           >
             SAFFRON
           </span>
           <span style={{ color: "#374151", fontSize: 13 }}>/</span>
-          <span
-            style={{ fontSize: 11, color: "#6b7280", letterSpacing: "0.1em" }}
-          >
+          <span style={{ fontSize: 11, color: "#6b7280", letterSpacing: "0.1em" }}>
             HONEYPOT SIMULATOR
           </span>
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
           <Badge color="gray">SESSION: {sessionId}</Badge>
+          {callbackStatus === "polling" && (
+            <Badge color="amber">⟳ AWAITING CALLBACK</Badge>
+          )}
+          {callbackStatus === "fired" && (
+            <Badge color="green">✓ CALLBACK SENT</Badge>
+          )}
           <button
             onClick={() => setSettingsOpen((o) => !o)}
             style={{
@@ -386,23 +686,10 @@ export default function SaffronUI() {
             [
               { label: "API URL", val: apiUrl, set: setApiUrl, w: 280 },
               { label: "API Key", val: apiKey, set: setApiKey, w: 160 },
-              {
-                label: "Session ID",
-                val: sessionId,
-                set: setSessionId,
-                w: 180,
-              },
-            ] as {
-              label: string;
-              val: string;
-              set: (v: string) => void;
-              w: number;
-            }[]
+              { label: "Session ID", val: sessionId, set: setSessionId, w: 180 },
+            ] as { label: string; val: string; set: (v: string) => void; w: number }[]
           ).map(({ label, val, set, w }) => (
-            <div
-              key={label}
-              style={{ display: "flex", flexDirection: "column", gap: 4 }}
-            >
+            <div key={label} style={{ display: "flex", flexDirection: "column", gap: 4 }}>
               <label
                 style={{
                   fontSize: 10,
@@ -438,7 +725,7 @@ export default function SaffronUI() {
         style={{
           flex: 1,
           display: "grid",
-          gridTemplateColumns: "240px 1fr 280px",
+          gridTemplateColumns: "240px 1fr 300px",
           overflow: "hidden",
           minHeight: 0,
         }}
@@ -469,19 +756,21 @@ export default function SaffronUI() {
             const step = presetStep[i] ?? 0;
             const done = step >= p.messages.length;
             const isActive = activePreset === i;
+            const isThisRunning = isAutoRunning && activePreset === i;
+
             return (
               <div
                 key={i}
-                onClick={() => !done && sendPresetNext(p, i)}
+                onClick={() => !done && !isAutoRunning && startPresetAutoRun(p, i)}
                 style={{
                   background: isActive ? "#0f1a0f" : "#0d0d0d",
                   border: `1px solid ${isActive ? "#166534" : "#1a1a1a"}`,
                   borderRadius: 6,
                   padding: "10px 12px",
                   marginBottom: 8,
-                  cursor: done ? "default" : "pointer",
-                  opacity: done ? 0.45 : 1,
-                  transition: "border-color 0.2s",
+                  cursor: done || isAutoRunning ? "default" : "pointer",
+                  opacity: done ? 0.45 : isAutoRunning && !isActive ? 0.5 : 1,
+                  transition: "border-color 0.2s, opacity 0.2s",
                 }}
               >
                 <div
@@ -492,30 +781,26 @@ export default function SaffronUI() {
                     marginBottom: 5,
                   }}
                 >
-                  <span
-                    style={{ fontSize: 12, color: "#f1f5f9", fontWeight: 500 }}
-                  >
+                  <span style={{ fontSize: 12, color: "#f1f5f9", fontWeight: 500 }}>
                     {p.icon} {p.label}
                   </span>
                   {!done && (
                     <span
                       style={{
                         fontSize: 10,
-                        color: "#4ade80",
-                        background: "#0a2218",
-                        border: "1px solid #166534",
+                        color: isThisRunning ? "#fbbf24" : "#4ade80",
+                        background: isThisRunning ? "#221a05" : "#0a2218",
+                        border: `1px solid ${isThisRunning ? "#92400e" : "#166534"}`,
                         borderRadius: 3,
                         padding: "1px 6px",
                       }}
                     >
-                      {step}/{p.messages.length}
+                      {isThisRunning ? "▶ RUNNING" : `${step}/${p.messages.length}`}
                     </span>
                   )}
                 </div>
-                <div style={{ fontSize: 10, color: "#6b7280" }}>
-                  {p.category}
-                </div>
-                {!done && (
+                <div style={{ fontSize: 10, color: "#6b7280" }}>{p.category}</div>
+                {!done && !isThisRunning && (
                   <div
                     style={{
                       marginTop: 7,
@@ -528,6 +813,26 @@ export default function SaffronUI() {
                     "{p.messages[step].slice(0, 60)}..."
                   </div>
                 )}
+                {isThisRunning && (
+                  <div style={{ marginTop: 7, display: "flex", alignItems: "center", gap: 5 }}>
+                    <span style={{ display: "inline-flex", gap: 3 }}>
+                      {[0, 1, 2].map((j) => (
+                        <span
+                          key={j}
+                          style={{
+                            width: 4,
+                            height: 4,
+                            borderRadius: "50%",
+                            background: "#fbbf24",
+                            display: "inline-block",
+                            animation: `blink 1.2s ${j * 0.2}s infinite`,
+                          }}
+                        />
+                      ))}
+                    </span>
+                    <span style={{ fontSize: 10, color: "#92400e" }}>sending turn {step + 1}…</span>
+                  </div>
+                )}
                 {done && (
                   <div style={{ fontSize: 10, color: "#166534", marginTop: 5 }}>
                     ✓ sequence complete
@@ -537,6 +842,7 @@ export default function SaffronUI() {
             );
           })}
 
+          {/* Quick Fire */}
           <div
             style={{
               marginTop: 20,
@@ -558,17 +864,18 @@ export default function SaffronUI() {
             {QUICK_FIRE.map((m, i) => (
               <div
                 key={i}
-                onClick={() => sendMessage(m)}
+                onClick={() => !loading && sendMessage(m)}
                 style={{
                   fontSize: 11,
                   color: "#9ca3af",
                   padding: "6px 8px",
                   borderRadius: 4,
-                  cursor: "pointer",
+                  cursor: loading ? "default" : "pointer",
                   marginBottom: 4,
                   background: "#0a0a0a",
                   border: "1px solid #111",
                   lineHeight: 1.4,
+                  opacity: loading ? 0.5 : 1,
                 }}
               >
                 ↗ {m.slice(0, 50)}
@@ -579,25 +886,13 @@ export default function SaffronUI() {
         </div>
 
         {/* ── Center: Chat ── */}
-        <div
-          style={{
-            display: "flex",
-            flexDirection: "column",
-            overflow: "hidden",
-          }}
-        >
+        <div style={{ display: "flex", flexDirection: "column", overflow: "hidden" }}>
           <div style={{ flex: 1, overflowY: "auto", padding: "20px 24px" }}>
             {messages.length === 0 && (
               <div
-                style={{
-                  textAlign: "center",
-                  paddingTop: 60,
-                  color: "#374151",
-                }}
+                style={{ textAlign: "center", paddingTop: 60, color: "#374151" }}
               >
-                <div style={{ fontSize: 32, marginBottom: 14, opacity: 0.4 }}>
-                  🛡
-                </div>
+                <div style={{ fontSize: 32, marginBottom: 14, opacity: 0.4 }}>🛡</div>
                 <div
                   style={{
                     fontSize: 12,
@@ -606,6 +901,9 @@ export default function SaffronUI() {
                   }}
                 >
                   Honeypot Active — Send a scam message to begin
+                </div>
+                <div style={{ fontSize: 11, color: "#1f2937", marginTop: 10 }}>
+                  Messages are sent one-by-one. The agent replies before the next message is sent.
                 </div>
               </div>
             )}
@@ -621,6 +919,7 @@ export default function SaffronUI() {
                     flexDirection: isScammer ? "row" : "row-reverse",
                     gap: 10,
                     alignItems: "flex-start",
+                    animation: "fadeUp 0.2s ease",
                   }}
                 >
                   <div
@@ -658,9 +957,7 @@ export default function SaffronUI() {
                       style={{
                         background: isScammer ? "#140808" : "#0a1a0a",
                         border: `1px solid ${isScammer ? "#450a0a" : "#14532d"}`,
-                        borderRadius: isScammer
-                          ? "2px 8px 8px 8px"
-                          : "8px 2px 8px 8px",
+                        borderRadius: isScammer ? "2px 8px 8px 8px" : "8px 2px 8px 8px",
                         padding: "10px 14px",
                         fontSize: 13,
                         lineHeight: 1.6,
@@ -674,6 +971,7 @@ export default function SaffronUI() {
               );
             })}
 
+            {/* Typing indicator */}
             {loading && (
               <div
                 style={{
@@ -726,6 +1024,48 @@ export default function SaffronUI() {
               </div>
             )}
 
+            {/* Callback polling indicator */}
+            {callbackStatus === "polling" && !loading && (
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "center",
+                  marginTop: 12,
+                }}
+              >
+                <div
+                  style={{
+                    background: "#221a05",
+                    border: "1px solid #92400e",
+                    borderRadius: 6,
+                    padding: "8px 16px",
+                    fontSize: 11,
+                    color: "#fbbf24",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 8,
+                  }}
+                >
+                  <span style={{ display: "inline-flex", gap: 3 }}>
+                    {[0, 1, 2].map((j) => (
+                      <span
+                        key={j}
+                        style={{
+                          width: 4,
+                          height: 4,
+                          borderRadius: "50%",
+                          background: "#fbbf24",
+                          display: "inline-block",
+                          animation: `blink 1.2s ${j * 0.2}s infinite`,
+                        }}
+                      />
+                    ))}
+                  </span>
+                  Waiting for GUVI callback confirmation…
+                </div>
+              </div>
+            )}
+
             {error && (
               <div
                 style={{
@@ -745,7 +1085,7 @@ export default function SaffronUI() {
             <div ref={chatEndRef} />
           </div>
 
-          {/* Input */}
+          {/* ── Input bar ── */}
           <div
             style={{
               borderTop: "1px solid #111",
@@ -753,6 +1093,39 @@ export default function SaffronUI() {
               background: "#090909",
             }}
           >
+            {isAutoRunning && (
+              <div
+                style={{
+                  marginBottom: 8,
+                  padding: "6px 10px",
+                  background: "#221a05",
+                  border: "1px solid #92400e",
+                  borderRadius: 5,
+                  fontSize: 11,
+                  color: "#fbbf24",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 6,
+                }}
+              >
+                <span style={{ display: "inline-flex", gap: 3 }}>
+                  {[0, 1, 2].map((j) => (
+                    <span
+                      key={j}
+                      style={{
+                        width: 4,
+                        height: 4,
+                        borderRadius: "50%",
+                        background: "#fbbf24",
+                        display: "inline-block",
+                        animation: `blink 1.2s ${j * 0.2}s infinite`,
+                      }}
+                    />
+                  ))}
+                </span>
+                Auto-sequence running — waiting for agent reply before next scam message…
+              </div>
+            )}
             <div style={{ display: "flex", gap: 10, alignItems: "flex-end" }}>
               <textarea
                 value={customMsg}
@@ -760,14 +1133,12 @@ export default function SaffronUI() {
                 onKeyDown={(e) => {
                   if (e.key === "Enter" && !e.shiftKey) {
                     e.preventDefault();
-                    if (customMsg.trim()) {
-                      sendMessage(customMsg);
-                      setCustomMsg("");
-                    }
+                    handleSendCustom();
                   }
                 }}
-                placeholder="Type a custom scam message... (Enter to send, Shift+Enter for newline)"
+                placeholder="Type a custom scam message… (Enter to send, Shift+Enter for newline)"
                 rows={2}
+                disabled={loading || isAutoRunning}
                 style={{
                   flex: 1,
                   background: "#0d0d0d",
@@ -780,23 +1151,19 @@ export default function SaffronUI() {
                   resize: "none",
                   outline: "none",
                   lineHeight: 1.5,
+                  opacity: loading || isAutoRunning ? 0.5 : 1,
                 }}
               />
               <button
-                onClick={() => {
-                  if (customMsg.trim()) {
-                    sendMessage(customMsg);
-                    setCustomMsg("");
-                  }
-                }}
-                disabled={loading || !customMsg.trim()}
+                onClick={handleSendCustom}
+                disabled={loading || isAutoRunning || !customMsg.trim()}
                 style={{
-                  background: customMsg.trim() ? "#14532d" : "#111",
-                  border: `1px solid ${customMsg.trim() ? "#166534" : "#1f2937"}`,
+                  background: customMsg.trim() && !loading && !isAutoRunning ? "#14532d" : "#111",
+                  border: `1px solid ${customMsg.trim() && !loading && !isAutoRunning ? "#166534" : "#1f2937"}`,
                   borderRadius: 6,
-                  color: customMsg.trim() ? "#4ade80" : "#374151",
+                  color: customMsg.trim() && !loading && !isAutoRunning ? "#4ade80" : "#374151",
                   padding: "10px 18px",
-                  cursor: customMsg.trim() ? "pointer" : "default",
+                  cursor: customMsg.trim() && !loading && !isAutoRunning ? "pointer" : "default",
                   fontSize: 13,
                   fontFamily: "inherit",
                   fontWeight: 600,
@@ -808,13 +1175,13 @@ export default function SaffronUI() {
             </div>
             <div style={{ fontSize: 10, color: "#374151", marginTop: 6 }}>
               {messages.length} messages in session ·{" "}
-              {messages.filter((m) => m.sender === "scammer").length} scammer
-              turns
+              {messages.filter((m) => m.sender === "scammer").length} scammer turns ·{" "}
+              {messages.filter((m) => m.sender === "honeypot").length} agent replies
             </div>
           </div>
         </div>
 
-        {/* ── Right: Intelligence ── */}
+        {/* ── Right: Intelligence panel ── */}
         <div
           style={{
             borderLeft: "1px solid #111",
@@ -880,12 +1247,7 @@ export default function SaffronUI() {
           {intel ? (
             <>
               <div
-                style={{
-                  display: "flex",
-                  gap: 6,
-                  flexWrap: "wrap",
-                  marginBottom: 14,
-                }}
+                style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 14 }}
               >
                 {intel.scamType && <Badge color="red">{intel.scamType}</Badge>}
                 {intel.language && <Badge color="blue">{intel.language}</Badge>}
@@ -913,21 +1275,9 @@ export default function SaffronUI() {
               )}
 
               <IntelItem label="UPI IDs" items={intel.upiIds} color="#fbbf24" />
-              <IntelItem
-                label="Phone Numbers"
-                items={intel.phoneNumbers}
-                color="#60a5fa"
-              />
-              <IntelItem
-                label="Phishing Links"
-                items={intel.phishingLinks}
-                color="#f87171"
-              />
-              <IntelItem
-                label="Bank Accounts"
-                items={intel.bankAccounts}
-                color="#a78bfa"
-              />
+              <IntelItem label="Phone Numbers" items={intel.phoneNumbers} color="#60a5fa" />
+              <IntelItem label="Phishing Links" items={intel.phishingLinks} color="#f87171" />
+              <IntelItem label="Bank Accounts" items={intel.bankAccounts} color="#a78bfa" />
 
               {(intel.suspiciousKeywords?.length ?? 0) > 0 && (
                 <div style={{ marginBottom: 14 }}>
@@ -944,9 +1294,7 @@ export default function SaffronUI() {
                   </div>
                   <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
                     {intel.suspiciousKeywords.map((k, i) => (
-                      <Badge key={i} color="amber">
-                        {k}
-                      </Badge>
+                      <Badge key={i} color="amber">{k}</Badge>
                     ))}
                   </div>
                 </div>
@@ -965,25 +1313,10 @@ export default function SaffronUI() {
                   >
                     Attack Flow
                   </div>
-                  <div
-                    style={{ display: "flex", flexDirection: "column", gap: 0 }}
-                  >
+                  <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
                     {intel.attackFlow.map((step, i) => (
-                      <div
-                        key={i}
-                        style={{
-                          display: "flex",
-                          alignItems: "center",
-                          gap: 6,
-                        }}
-                      >
-                        <div
-                          style={{
-                            display: "flex",
-                            flexDirection: "column",
-                            alignItems: "center",
-                          }}
-                        >
+                      <div key={i} style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                        <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
                           <div
                             style={{
                               width: 8,
@@ -995,21 +1328,14 @@ export default function SaffronUI() {
                             }}
                           />
                           {i < intel.attackFlow.length - 1 && (
-                            <div
-                              style={{
-                                width: 1,
-                                height: 14,
-                                background: "#374151",
-                              }}
-                            />
+                            <div style={{ width: 1, height: 14, background: "#374151" }} />
                           )}
                         </div>
                         <div
                           style={{
                             fontSize: 11,
                             color: "#9ca3af",
-                            paddingBottom:
-                              i < intel.attackFlow.length - 1 ? 12 : 0,
+                            paddingBottom: i < intel.attackFlow.length - 1 ? 12 : 0,
                           }}
                         >
                           {step}
@@ -1017,38 +1343,6 @@ export default function SaffronUI() {
                       </div>
                     ))}
                   </div>
-                </div>
-              )}
-
-              {callbackLog && (
-                <div style={{ marginTop: 8 }}>
-                  <div
-                    style={{
-                      fontSize: 10,
-                      color: "#6b7280",
-                      letterSpacing: "0.12em",
-                      textTransform: "uppercase",
-                      marginBottom: 8,
-                    }}
-                  >
-                    GUVI Callback Preview
-                  </div>
-                  <pre
-                    style={{
-                      background: "#0a0a0a",
-                      border: "1px solid #1f2937",
-                      borderRadius: 6,
-                      padding: 10,
-                      fontSize: 10,
-                      color: "#4ade80",
-                      overflowX: "auto",
-                      lineHeight: 1.5,
-                      maxHeight: 200,
-                      overflowY: "auto",
-                    }}
-                  >
-                    {JSON.stringify(callbackLog, null, 2)}
-                  </pre>
                 </div>
               )}
             </>
@@ -1061,12 +1355,96 @@ export default function SaffronUI() {
                 paddingTop: 30,
               }}
             >
-              <div style={{ fontSize: 28, marginBottom: 10, opacity: 0.3 }}>
-                🔍
-              </div>
+              <div style={{ fontSize: 28, marginBottom: 10, opacity: 0.3 }}>🔍</div>
               No intel extracted yet
             </div>
           )}
+
+          {/* ── GUVI Callback section ── */}
+          <div
+            style={{
+              marginTop: 20,
+              borderTop: "1px solid #111",
+              paddingTop: 14,
+            }}
+          >
+            <div
+              style={{
+                fontSize: 10,
+                color: "#4b5563",
+                letterSpacing: "0.14em",
+                textTransform: "uppercase",
+                marginBottom: 10,
+                display: "flex",
+                alignItems: "center",
+                gap: 6,
+              }}
+            >
+              — GUVI Callback
+              {callbackStatus === "polling" && (
+                <span
+                  style={{
+                    width: 6,
+                    height: 6,
+                    borderRadius: "50%",
+                    background: "#fbbf24",
+                    display: "inline-block",
+                    animation: "blink 1s infinite",
+                  }}
+                />
+              )}
+              {callbackStatus === "fired" && (
+                <span
+                  style={{
+                    width: 6,
+                    height: 6,
+                    borderRadius: "50%",
+                    background: "#4ade80",
+                    boxShadow: "0 0 5px #4ade80",
+                    display: "inline-block",
+                  }}
+                />
+              )}
+            </div>
+
+            {callbackStatus === "idle" && !callbackPayload && (
+              <div style={{ fontSize: 11, color: "#374151" }}>
+                Callback fires automatically when session.finished = True on the backend.
+              </div>
+            )}
+
+            {callbackStatus === "polling" && !callbackPayload && (
+              <div
+                style={{
+                  background: "#221a05",
+                  border: "1px solid #92400e",
+                  borderRadius: 6,
+                  padding: "8px 10px",
+                  fontSize: 11,
+                  color: "#fbbf24",
+                }}
+              >
+                Polling backend for callback confirmation…
+              </div>
+            )}
+
+            {callbackPayload && <CallbackPanel payload={callbackPayload} />}
+
+            {callbackStatus === "fired" && !callbackPayload && (
+              <div
+                style={{
+                  background: "#0a2218",
+                  border: "1px solid #166534",
+                  borderRadius: 6,
+                  padding: "8px 10px",
+                  fontSize: 11,
+                  color: "#4ade80",
+                }}
+              >
+                ✓ Callback was sent to GUVI. Payload was not returned inline by this backend.
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
@@ -1076,11 +1454,20 @@ export default function SaffronUI() {
           0%, 80%, 100% { opacity: 0.2; transform: scale(0.8); }
           40%            { opacity: 1;   transform: scale(1);   }
         }
+        @keyframes slideIn {
+          from { opacity: 0; transform: translateY(8px); }
+          to   { opacity: 1; transform: translateY(0);   }
+        }
+        @keyframes fadeUp {
+          from { opacity: 0; transform: translateY(4px); }
+          to   { opacity: 1; transform: translateY(0);   }
+        }
         * { box-sizing: border-box; }
         ::-webkit-scrollbar       { width: 4px; }
         ::-webkit-scrollbar-track { background: #080808; }
         ::-webkit-scrollbar-thumb { background: #1f2937; border-radius: 2px; }
         textarea::placeholder     { color: #374151; }
+        input:focus               { border-color: #374151 !important; }
       `}</style>
     </div>
   );
