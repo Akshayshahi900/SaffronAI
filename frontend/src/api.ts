@@ -27,7 +27,7 @@ export async function sendMessage(
   config: ApiConfig,
   message: string,
 ): Promise<MessageResponse> {
-  const res = await fetch(`${import.meta.env.DEFAULT_API_URL}/api/message`, {
+  const res = await fetch(`${config.apiUrl}/api/message`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -35,7 +35,7 @@ export async function sendMessage(
       "x-api-key": config.apiKey,
     },
     body: JSON.stringify({
-      sessionId: import.meta.env.DEFAULT_SESSION_ID,
+      sessionId: config.sessionId,
       message,
     }),
   });

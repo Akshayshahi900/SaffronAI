@@ -1,8 +1,9 @@
 import type { Preset } from "./types";
 
-export const DEFAULT_API_URL = import.meta.env.DEFAULT_API_URL;
-export const DEFAULT_API_KEY = import.meta.env.DEFAULT_API_KEY;
-export const DEFAULT_SESSION_ID = import.meta.env.DEFAULT_SESSION_ID;
+export const DEFAULT_API_URL = import.meta.env.VITE_API_URL;
+export const DEFAULT_API_KEY = import.meta.env.VITE_API_KEY;
+export const DEFAULT_SESSION_ID =
+  import.meta.env.VITE_SESSION_ID || `session-${Date.now()}`;
 
 export const PRESETS: Preset[] = [
   {
