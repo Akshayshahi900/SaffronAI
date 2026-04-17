@@ -23,12 +23,16 @@ export interface CallbackResponse {
 }
 
 // ── Send one message to the honeypot ─────────────────────────────────────────
-export async function sendMessage(message: string): Promise<MessageResponse> {
+export async function sendMessage(
+  config: ApiConfig,
+  message: string,
+): Promise<MessageResponse> {
   const res = await fetch(`${import.meta.env.DEFAULT_API_URL}/api/message`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      "x-api-key": import.meta.env.DEFAULT_API_KEY,
+      // "x-api-key": import.meta.env.DEFAULT_API_KEY,
+      "x-api-key": config.apiKey,
     },
     body: JSON.stringify({
       sessionId: import.meta.env.DEFAULT_SESSION_ID,
