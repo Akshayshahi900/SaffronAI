@@ -1,129 +1,176 @@
-# 🛡 SAFFRON AI – Agentic Scam Honeypot API
+# 🛡️ SAFFRON AI — Agentic Scam Honeypot Simulator
 
-SAFFRON AI is an **agentic scam honeypot backend** built for the **HCL × GUVI AI Buildathon**.
-
-It simulates a real Indian bank user, engages scammers in multi-turn conversations, extracts actionable scam intelligence, and reports structured results to the GUVI evaluation system.
+SAFFRON AI is an AI-powered honeypot system that simulates a real user, engages scammers in multi-turn conversations, extracts scam intelligence, and visualizes attack patterns in real time.
 
 ---
 
-## 🚀 What This System Does
+## 🌐 Live Demo
 
-- Receives scam messages via REST API
-- Detects scam intent (OTP, KYC, UPI, impersonation)
-- Engages scammers using a human-like AI agent
-- Extracts intelligence:
-  - UPI IDs
-  - Bank accounts
-  - Phone numbers
-  - Phishing links
-- Automatically triggers GUVI callback when sufficient intel is gathered
-
-This is **not a chatbot** — it is an **active fraud intelligence trap**.
+https://saffron-ai.vercel.app
 
 ---
 
-## 🧪 How GUVI Evaluates This
+## 🚀 Overview
 
-GUVI evaluates SAFFRON AI by sending **scam messages as API calls**.
+SAFFRON AI receives scam messages through an API and responds like a real user.
+During the interaction, it extracts useful intelligence such as UPI IDs, bank accounts, phone numbers, and phishing links.
 
-Each API request represents **one message** in an ongoing conversation.
+Instead of only detecting scams, the system actively engages scammers and gathers actionable data.
 
-Conversation state is maintained using a **sessionId**.
+---
 
-### Incoming Request (from GUVI)
+## 🧠 System Flow
 
-POST /api/message
-Headers:
-x-api-key: <HONEYPOT_API_KEY>
+```txt
+Scammer Message
+      ↓
+Frontend Simulator (React)
+      ↓
+FastAPI Backend
+      ↓
+Honeypot Agent (LLM)
+      ↓
+Intelligence Extraction
+      ↓
+Risk & Attack Flow Analysis
+      ↓
+Final Structured Output
+```
 
-Body:
-{
-"sessionId": "guvi-session-001",
-"message": "URGENT: Your SBI account is blocked. Share OTP immediately."
-}
+---
 
-### SAFFRON AI Response
+## ⚙️ Tech Stack
+
+* **Frontend:** React (Vite, TypeScript)
+* **Backend:** FastAPI (Python)
+* **LLM:** API-based (Groq)
+* **Deployment:** Vercel (frontend), Render (backend)
+* **Data Extraction:** Regex + heuristic parsing
+
+---
+
+## 🔥 Features
+
+* Multi-turn scam conversation simulation
+* Human-like AI responses
+* Real-time intelligence extraction
+* Risk scoring and confidence estimation
+* Attack flow reconstruction
+* Session-based conversation tracking
+
+---
+
+## 📊 Extracted Intelligence
+
+* UPI IDs
+* Bank account numbers
+* Phone numbers
+* Phishing links
+* Suspicious keywords
+
+---
+
+## 🧪 Example Output
 
 ```json
 {
-  "status": "success",
-  "reply": "Sir I use PhonePe. Please resend the UPI ID or QR code."
-}
-````
-
-SAFFRON continues engaging the scammer **across multiple turns** using the same `sessionId`.
-
----
-
-## 📡 Mandatory GUVI Callback (Critical)
-
-When SAFFRON determines that enough scam intelligence has been collected, it **automatically sends a callback** to GUVI:
-
-POST <https://hackathon.guvi.in/api/updateHoneyPotFinalResult>
-
-Example payload:
-
-```json
-{
-  "sessionId": "guvi-session-001",
-  "scamDetected": true,
-  "totalMessagesExchanged": 14,
-  "extractedIntelligence": {
-    "upiIds": ["scammer.fraud@fakebank"],
-    "bankAccounts": ["1234567890123456"],
-    "phoneNumbers": ["+91-9876543210"],
-    "phishingLinks": []
-  },
-  "scamType": "Bank Impersonation",
-  "confidenceLevel": 0.92,
-  "agentNotes": "High urgency, OTP pressure, UPI redirection detected"
+  "upiIds": ["jobs.verify@fakebank"],
+  "bankAccounts": ["1234567890123456"],
+  "scamType": "Job Scam",
+  "confidence": 0.99,
+  "risk": "₹50,000 - ₹2,00,000"
 }
 ```
 
-⚠️ **If this callback is not sent, the submission is not evaluated.**
-
 ---
 
-## 🧠 High-Level Flow
+## 🧱 Project Structure
 
-GUVI → /api/message
-     → Session Manager
-     → Honeypot AI Agent
-     → Intelligence Extractor
-     → Risk & Confidence Engine
-     → Final Callback → GUVI
-
----
-
-## 🏗 Project Structure
+```txt
+frontend/
+  ├── components/
+  ├── App.tsx
+  ├── api.ts
 
 backend/
-└── app/
-    ├── api/            # FastAPI routes
-    ├── core/           # Agent, intelligence, session logic
-    ├── services/       # LLM client, GUVI callback
-    ├── models/         # Session data models
-    └── docs/           # Detailed documentation
+  └── app/
+      ├── api/
+      ├── core/
+      ├── services/
+      ├── models/
+```
 
 ---
 
-## 📚 Documentation
+## 🧪 Run Locally
 
-More detailed documentation is available in the `docs/` folder:
+### Backend
 
-- `docs/docs.md` – Vision, problem statement, and system overview
-- `docs/specs.md` – Technical architecture and design
-- `docs/how_to_run_locally.md` – Local testing & curl commands
+```bash
+cd backend
+export GROQ_API_KEY="your_key"
+export HONEYPOT_API_KEY="test-secret"
+
+uvicorn app.api.main:app --reload
+```
+
+### Frontend
+
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+---
+
+## ⚠️ Environment Variables
+
+```env
+VITE_API_URL=your_backend_url
+VITE_API_KEY=your_api_key
+VITE_SESSION_ID=your_session_id
+```
+
+---
+
+## ⚙️ How It Works
+
+1. A scam message is received
+2. The AI agent responds like a normal user
+3. The scammer reveals information
+4. The system extracts and stores intelligence
+5. Risk and scam type are calculated
+6. Final structured output is generated
+
+---
+
+## 🧩 Key Technical Challenge
+
+Handling multi-turn conversations with consistent session state while keeping the UI responsive.
+
+Solved using:
+
+* sessionId-based state management
+* separation of UI state and execution control
+* controlled async flow instead of uncontrolled polling
+
+---
+
+## 🚀 Future Improvements
+
+* Replace polling with WebSockets
+* Add persistent database for intelligence
+* Improve extraction using structured LLM outputs
+* Add multiple agent personas
 
 ---
 
 ## 🏁 Summary
 
-SAFFRON AI is a **production-style agentic honeypot** that:
+SAFFRON AI demonstrates an active approach to fraud detection by engaging scammers and extracting real intelligence instead of only classifying messages.
 
-- Actively traps scammers
-- Extracts forensic-grade scam intelligence
-- Reconstructs attack patterns
-- Reports structured evidence to GUVI automatically
+---
 
-Built to demonstrate **real-world cybercrime intelligence**, not just classification.
+## 👨‍💻 Author
+Built for HCL × GUVI Hackathon
