@@ -22,7 +22,7 @@ const colorMap = {
 };
 
 export default function Badge({ children, color = "gray" }: BadgeProps) {
-  const styles = colorMap[color];
+  const styles = colorMap[color] || colorMap.gray; // 🔥 fallback safety
 
   return (
     <span

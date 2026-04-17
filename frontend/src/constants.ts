@@ -1,8 +1,8 @@
 import type { Preset } from "./types";
 
-export const DEFAULT_API_URL = "http://127.0.0.1:8000";
-export const DEFAULT_API_KEY = "cf9d7746dfc549b44f7235ff83a831fb";
-export const DEFAULT_SESSION_ID = "guvi-sim-001";
+export const DEFAULT_API_URL = import.meta.env.DEFAULT_API_URL;
+export const DEFAULT_API_KEY = import.meta.env.DEFAULT_API_KEY;
+export const DEFAULT_SESSION_ID = import.meta.env.DEFAULT_SESSION_ID;
 
 export const PRESETS: Preset[] = [
   {

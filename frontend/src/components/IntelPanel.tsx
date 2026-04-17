@@ -1,5 +1,5 @@
 import { useState } from "react";
-import type { Intel, CallbackPayload } from "../../types";
+import type { Intel, CallbackPayload } from "../types";
 import Badge from "./Badge";
 
 interface IntelPanelProps {
@@ -99,10 +99,10 @@ export default function IntelPanel({
                 marginBottom: 14,
               }}
             >
-              {intel.scamType && <Badge color="red">{intel.scamType}</Badge>}
-              {intel.language && <Badge color="blue">{intel.language}</Badge>}
+              {intel.scamType && <Badge color="amber">{intel.scamType}</Badge>}
+              {intel.language && <Badge color="gray">{intel.language}</Badge>}
               {intel.riskScore != null && (
-                <Badge color={intel.riskScore > 0.7 ? "red" : "amber"}>
+                <Badge color={intel.riskScore > 0.7 ? "amber" : "gray"}>
                   RISK: {(intel.riskScore * 100).toFixed(0)}%
                 </Badge>
               )}
@@ -413,7 +413,7 @@ function CallbackPanel({ payload }: { payload: CallbackPayload }) {
           </span>
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-          <Badge color={payload.scamDetected ? "red" : "gray"}>
+          <Badge color={payload.scamDetected ? "amber" : "gray"}>
             {payload.scamDetected ? "SCAM CONFIRMED" : "INCONCLUSIVE"}
           </Badge>
           <button
